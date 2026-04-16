@@ -214,6 +214,105 @@
       color: #fff;
     }
 
+    .btn-live {
+      cursor: pointer;
+      opacity: 1;
+      text-decoration: none;
+    }
+
+    /* Modal overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-panel {
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      position: relative;
+      padding: 28px 28px 24px;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.2rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+
+    .modal-close:hover {
+      color: var(--text);
+      background: var(--border);
+    }
+
+    .modal-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 20px;
+      padding-right: 32px;
+    }
+
+    .modal-section {
+      margin-bottom: 18px;
+    }
+
+    .modal-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .modal-section-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
+      color: var(--card-border);
+      margin-bottom: 6px;
+    }
+
+    .modal-section-body {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .modal-section-body ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .modal-section-body ul li::before {
+      content: '— ';
+      color: var(--card-border);
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       #grid {
@@ -222,6 +321,10 @@
 
       #main {
         padding: 20px 16px 16px;
+      }
+
+      .modal-panel {
+        padding: 22px 18px 20px;
       }
     }
 
@@ -264,8 +367,8 @@
         <div class="card-name">FieldIQ</div>
         <div class="card-desc">A data-driven college football analytics platform delivering deep statistics, trend analysis, and meaningful performance breakdowns.</div>
         <div class="card-actions">
-          <button class="btn btn-demo" disabled>Coming Soon</button>
-          <button class="btn btn-arch" disabled>Coming Soon</button>
+          <a class="btn btn-demo btn-live" href="https://d1q3x6tsvbllgg.cloudfront.net" target="_blank" rel="noopener">Live Demo</a>
+          <button class="btn btn-arch btn-live" onclick="openFieldIQModal()">Architecture</button>
         </div>
       </div>
 
@@ -311,6 +414,105 @@
   <div id="footer">
     <a href="https://jimmyhubbard2.cc/projects/">&#8592; Back to Projects</a>
   </div>
+
+  <!-- FieldIQ Architecture Modal -->
+  <div id="fieldiq-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="fieldiq-modal-title" onclick="handleOverlayClick(event)">
+    <div class="modal-panel">
+      <button class="modal-close" onclick="closeFieldIQModal()" aria-label="Close">&#x2715;</button>
+      <div class="modal-title" id="fieldiq-modal-title">FieldIQ &mdash; Architecture</div>
+
+      <div class="modal-section">
+        <div class="modal-section-label">What It Is</div>
+        <div class="modal-section-body">A college football analytics dashboard delivering data-driven stats, standings, coach data, and performance breakdowns. Built as a fully client-side single-page application — no backend, no build step.</div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-label">Tech Stack</div>
+        <div class="modal-section-body">
+          <ul>
+            <li>Vanilla HTML, CSS, JavaScript — no frameworks</li>
+            <li>Modular JS organized by analytical phase</li>
+            <li>Hosted on AWS S3 + CloudFront</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-label">Data Layer</div>
+        <div class="modal-section-body">
+          <ul>
+            <li>CFBD (College Football Data) API — live stats, standings, coach records</li>
+            <li>All data fetched client-side via fetch() at runtime</li>
+            <li>Aggressive caching strategy: past results cached forever, rankings 24hrs, current week 1hr</li>
+            <li>1,000 req/month free tier — every fetch decision is deliberate</li>
+            <li>Per-section error handling — one failed fetch never crashes the page</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-label">Key Decisions</div>
+        <div class="modal-section-body">
+          <ul>
+            <li>Client-side only — avoids backend complexity for a read-only analytics use case</li>
+            <li>API-driven rendering — UI built entirely from live API responses</li>
+            <li>_deriveIdentity() concatenates firstName + lastName from the CFBD /coaches endpoint to normalize coach identity across datasets</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-label">Structure</div>
+        <div class="modal-section-body">Nine analytical lenses built across 15 phases:
+          <ul style="margin-top: 6px;">
+            <li>Overview: Program DNA labels, Season Snapshot, Last/Next Game, School Identity</li>
+            <li>Game Control: Blowout vs Grinder profile, first/second half scoring, red zone efficiency, turnover margin</li>
+            <li>Volatility: Consistency Rating (std dev), Trap Game Index, largest win/loss</li>
+            <li>Situational: Home/away splits, night game record, bowl history, revenge game flags</li>
+            <li>Market Performance: ATS record (overall/home/away), O/U record, cover streaks</li>
+            <li>Long-Term Strength: Rankings history, NFL draft production, full coaching history from 1995, bowl all-time record</li>
+            <li>Campus Map: Leaflet.js + OpenStreetMap, school-colored pin, click-to-expand modal</li>
+            <li>H2H Search: Any two FBS schools, full record from 1990&ndash;present, ATS in matchups</li>
+            <li>Schedule: Full season schedule with spread/O&amp;U, past results with ATS outcome</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-label">What I Learned</div>
+        <div class="modal-section-body">
+          <ul>
+            <li>Working with third-party sports APIs — rate limits, inconsistent schemas, missing fields</li>
+            <li>Client-side data transformation at scale without a framework</li>
+            <li>Building modular vanilla JS that stays maintainable across fifteen independent phases</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    function openFieldIQModal() {
+      document.getElementById('fieldiq-modal').classList.add('open');
+      document.addEventListener('keydown', handleEscKey);
+    }
+
+    function closeFieldIQModal() {
+      document.getElementById('fieldiq-modal').classList.remove('open');
+      document.removeEventListener('keydown', handleEscKey);
+    }
+
+    function handleOverlayClick(e) {
+      if (e.target === document.getElementById('fieldiq-modal')) {
+        closeFieldIQModal();
+      }
+    }
+
+    function handleEscKey(e) {
+      if (e.key === 'Escape') closeFieldIQModal();
+    }
+  </script>
 
 </body>
 </html>
