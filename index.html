@@ -358,8 +358,8 @@
         <div class="card-name">RAG Knowledge Chatbot</div>
         <div class="card-desc">An AI-powered chatbot that answers questions from your own documents using Retrieval-Augmented Generation.</div>
         <div class="card-actions">
-          <button class="btn btn-demo" disabled>Coming Soon</button>
-          <button class="btn btn-arch" disabled>Coming Soon</button>
+          <a class="btn btn-demo btn-live" href="https://d1r1qv7io7k8vk.cloudfront.net" target="_blank" rel="noopener">Live Demo</a>
+          <button class="btn btn-arch btn-live" onclick="openRAGModal()">Architecture</button>
         </div>
       </div>
 
@@ -413,6 +413,89 @@
 
   <div id="footer">
     <a href="https://jimmyhubbard2.cc/projects/">&#8592; Back to Projects</a>
+  </div>
+
+  <!-- RAG Knowledge Chatbot Architecture Modal -->
+  <div id="rag-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="rag-modal-title" onclick="handleRAGOverlayClick(event)">
+    <div class="modal-panel">
+      <button class="modal-close" onclick="closeRAGModal()" aria-label="Close">&#x2715;</button>
+      <div class="modal-title" id="rag-modal-title">RAG Knowledge Chatbot &mdash; Architecture</div>
+
+      <div class="modal-section">
+        <div class="modal-section-label">What It Is</div>
+        <div class="modal-section-body">A serverless Retrieval-Augmented Generation chatbot with a multi-cloud dual-provider AI architecture (AWS Bedrock + Nebius AI Studio). Built with a custom retrieval layer rather than Bedrock Knowledge Bases, giving full control over chunking, embedding, and cosine similarity search.</div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-label">Tech Stack</div>
+        <div class="modal-section-body">
+          <ul>
+            <li>AWS Lambda, API Gateway, S3, CloudFront, EventBridge</li>
+            <li>AWS Bedrock: Titan Embeddings v2 + Claude Haiku 4.5</li>
+            <li>Nebius AI Studio: Llama 3.3-70B Instruct</li>
+            <li>CloudFormation for infrastructure as code</li>
+            <li>Vanilla HTML, CSS, JavaScript frontend &mdash; no frameworks</li>
+            <li>Python 3.12 Lambda runtime</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-label">Data Layer</div>
+        <div class="modal-section-body">
+          <ul>
+            <li>2,027-chunk combined vector index stored in S3 as JSON</li>
+            <li>Titan Embeddings v2 (1,536-dimensional vectors)</li>
+            <li>Cosine similarity search runs in-Lambda at query time</li>
+            <li>Two knowledge bases in a single index: Jimmy&rsquo;s background (resume, project writeups) and AWS Well-Architected Framework (six pillar whitepapers)</li>
+            <li>source_kb field on every chunk enables cross-KB search with visible source attribution</li>
+            <li>Module-level index caching: warm Lambda containers skip S3 reload on subsequent queries</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-label">Key Decisions</div>
+        <div class="modal-section-body">
+          <ul>
+            <li>Custom retrieval over Bedrock Knowledge Bases &mdash; exposes the embedding, chunking, and search layers instead of abstracting them away</li>
+            <li>Single combined index with source_kb tagging &mdash; one cosine pass per query, merge logic is just sorting by score</li>
+            <li>Module-level index caching + 1024MB Lambda memory &mdash; cold worst-case dropped from 32s to 15s</li>
+            <li>EventBridge warm-up ping every 5 minutes &mdash; eliminates cold starts for demo use at ~$0.01/month</li>
+            <li>Bedrock as default provider, Nebius via toggle &mdash; visible speed delta between providers is a demo feature</li>
+            <li>max_tokens=256 matched across both providers &mdash; consistent answer length regardless of model selection</li>
+            <li>CloudFormation for every AWS resource &mdash; no console clicks, reproducible deployments</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-label">Structure</div>
+        <div class="modal-section-body">User flow on every query:
+          <ul style="margin-top: 6px;">
+            <li>Frontend sends query text and selected provider to API Gateway</li>
+            <li>Query Lambda embeds the query with Titan Embeddings v2</li>
+            <li>Cosine similarity search against the 2,027-chunk index returns top-K matches with source_kb tags</li>
+            <li>Provider router: Bedrock path uses Claude XML prompt template, Nebius path uses Llama Markdown template</li>
+            <li>Response returned with generated answer plus retrieved source chunks, relevance scores, and KB badges</li>
+            <li>Right panel renders sources with visible attribution: orange badge for Jimmy&rsquo;s background, blue badge for Well-Architected</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-label">What I Learned</div>
+        <div class="modal-section-body">
+          <ul>
+            <li>Multi-cloud AI provider abstraction &mdash; isolating generation from retrieval makes swapping providers trivial</li>
+            <li>Serverless latency engineering &mdash; memory tuning, index caching, and EventBridge warm-up each moved the needle independently</li>
+            <li>RAG retrieval quality tuning &mdash; chunk size, overlap, and curated knowledge files all affect cosine scores</li>
+            <li>Cost discipline on AWS &mdash; under $5/month actual spend on a $20/month budget with observability, CloudFront, and dual AI providers</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
   </div>
 
   <!-- FieldIQ Architecture Modal -->
@@ -493,6 +576,24 @@
   </div>
 
   <script>
+    function openRAGModal() {
+      document.getElementById('rag-modal').classList.add('open');
+      document.addEventListener('keydown', handleRAGEscKey);
+    }
+
+    function closeRAGModal() {
+      document.getElementById('rag-modal').classList.remove('open');
+      document.removeEventListener('keydown', handleRAGEscKey);
+    }
+
+    function handleRAGOverlayClick(e) {
+      if (e.target === document.getElementById('rag-modal')) closeRAGModal();
+    }
+
+    function handleRAGEscKey(e) {
+      if (e.key === 'Escape') closeRAGModal();
+    }
+
     function openFieldIQModal() {
       document.getElementById('fieldiq-modal').classList.add('open');
       document.addEventListener('keydown', handleEscKey);
