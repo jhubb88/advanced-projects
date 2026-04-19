@@ -461,8 +461,8 @@
           <ul>
             <li>Custom retrieval over Bedrock Knowledge Bases &mdash; exposes the embedding, chunking, and search layers instead of abstracting them away</li>
             <li>Single combined index with source_kb tagging &mdash; one cosine pass per query, merge logic is just sorting by score</li>
-            <li>Module-level index caching + 1024MB Lambda memory &mdash; cold worst-case dropped from 32s to 15s</li>
-            <li>EventBridge warm-up ping every 5 minutes including a synthetic SambaNova call &mdash; eliminates cold starts for demo use at ~$0.03/month</li>
+            <li>Module-level index caching + 1024MB Lambda memory &mdash; cold worst-case dropped from 32s to 15s; EventBridge warmup primes the cache so first-touch is typically ~5s</li>
+            <li>EventBridge warm-up ping every 5 minutes &mdash; primes S3 index cache, keeps Lambda alive, synthetic SambaNova call at 3s timeout; ~$0.03/month</li>
             <li>Bedrock as default provider, SambaNova via toggle &mdash; latency is comparable (~2.5–5s), Bedrock produces deeper biographical answers</li>
             <li>max_tokens=256 matched across both providers &mdash; consistent answer length regardless of model selection</li>
             <li>CloudFormation for every AWS resource &mdash; no console clicks, reproducible deployments</li>
