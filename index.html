@@ -357,7 +357,7 @@
 
       <div class="card">
         <div class="card-name">RAG Knowledge Chatbot</div>
-        <div class="card-desc">A serverless RAG chatbot with dual-provider AI routing. Ask about my background or the AWS Well-Architected Framework — compare responses from AWS Bedrock (Claude) and Nebius AI Studio (Llama) live.</div>
+        <div class="card-desc">A serverless RAG chatbot with dual-provider AI routing. Ask about my background or the AWS Well-Architected Framework — compare responses from AWS Bedrock (Claude) and SambaNova (Llama) live.</div>
         <div class="card-actions">
           <a class="btn btn-demo btn-live" href="https://d1r1qv7io7k8vk.cloudfront.net" target="_blank" rel="noopener">Live Demo</a>
           <button class="btn btn-arch btn-live" onclick="openRAGModal()">Architecture</button>
@@ -424,7 +424,7 @@
 
       <div class="modal-section">
         <div class="modal-section-label">What It Is</div>
-        <div class="modal-section-body">A serverless Retrieval-Augmented Generation chatbot with a multi-cloud dual-provider AI architecture (AWS Bedrock + Nebius AI Studio). Built with a custom retrieval layer rather than Bedrock Knowledge Bases, giving full control over chunking, embedding, and cosine similarity search.</div>
+        <div class="modal-section-body">A serverless Retrieval-Augmented Generation chatbot with a multi-cloud dual-provider AI architecture (AWS Bedrock + SambaNova). Built with a custom retrieval layer rather than Bedrock Knowledge Bases, giving full control over chunking, embedding, and cosine similarity search.</div>
       </div>
 
       <div class="modal-section">
@@ -433,7 +433,7 @@
           <ul>
             <li>AWS Lambda, API Gateway, S3, CloudFront, EventBridge</li>
             <li>AWS Bedrock: Titan Embeddings v2 + Claude Haiku 4.5</li>
-            <li>Nebius AI Studio: Llama 3.3-70B Instruct</li>
+            <li>SambaNova: Llama 3.3-70B Instruct</li>
             <li>CloudFormation for infrastructure as code</li>
             <li>Vanilla HTML, CSS, JavaScript frontend &mdash; no frameworks</li>
             <li>Python 3.12 Lambda runtime</li>
@@ -462,8 +462,8 @@
             <li>Custom retrieval over Bedrock Knowledge Bases &mdash; exposes the embedding, chunking, and search layers instead of abstracting them away</li>
             <li>Single combined index with source_kb tagging &mdash; one cosine pass per query, merge logic is just sorting by score</li>
             <li>Module-level index caching + 1024MB Lambda memory &mdash; cold worst-case dropped from 32s to 15s</li>
-            <li>EventBridge warm-up ping every 5 minutes &mdash; eliminates cold starts for demo use at ~$0.01/month</li>
-            <li>Bedrock as default provider, Nebius via toggle &mdash; visible speed delta between providers is a demo feature</li>
+            <li>EventBridge warm-up ping every 5 minutes including a synthetic SambaNova call &mdash; eliminates cold starts for demo use at ~$0.03/month</li>
+            <li>Bedrock as default provider, SambaNova via toggle &mdash; latency is comparable (~2.5–5s), Bedrock produces deeper biographical answers</li>
             <li>max_tokens=256 matched across both providers &mdash; consistent answer length regardless of model selection</li>
             <li>CloudFormation for every AWS resource &mdash; no console clicks, reproducible deployments</li>
           </ul>
@@ -477,7 +477,7 @@
             <li>Frontend sends query text and selected provider to API Gateway</li>
             <li>Query Lambda embeds the query with Titan Embeddings v2</li>
             <li>Cosine similarity search against the 2,027-chunk index returns top-K matches with source_kb tags</li>
-            <li>Provider router: Bedrock path uses Claude XML prompt template, Nebius path uses Llama Markdown template</li>
+            <li>Provider router: Bedrock path uses Claude XML prompt template, SambaNova path uses Llama Markdown template</li>
             <li>Response returned with generated answer plus retrieved source chunks, relevance scores, and KB badges</li>
             <li>Right panel renders sources with visible attribution: orange badge for Jimmy&rsquo;s background, blue badge for Well-Architected</li>
           </ul>
