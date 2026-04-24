@@ -677,73 +677,58 @@
 
       <div class="modal-section">
         <div class="modal-label">What It Is</div>
-        <div class="modal-body">A serverless Retrieval-Augmented Generation chatbot with a multi-cloud dual-provider AI architecture (AWS Bedrock + SambaNova). Built with a custom retrieval layer rather than Bedrock Knowledge Bases, giving full control over chunking, embedding, and cosine similarity search.</div>
+        <div class="modal-body">A serverless Retrieval-Augmented Generation chatbot that answers questions grounded in real documents. Two knowledge bases live in one combined vector index: a personal/professional KB (resume, project writeups, work history) and the AWS Well-Architected Framework (~2,000 chunks across all six pillars). Users ask plain-English questions; the system retrieves the most relevant chunks via cosine similarity and generates grounded answers using AWS Bedrock.</div>
       </div>
 
       <div class="modal-section">
         <div class="modal-label">Tech Stack</div>
         <div class="modal-body">
           <ul>
-            <li>AWS Lambda, API Gateway, S3, CloudFront, EventBridge</li>
-            <li>AWS Bedrock: Titan Embeddings v2 + Claude Haiku 4.5</li>
-            <li>SambaNova: Llama 3.3-70B Instruct</li>
-            <li>CloudFormation for infrastructure as code</li>
-            <li>Vanilla HTML, CSS, JavaScript frontend &mdash; no frameworks</li>
-            <li>Python 3.12 Lambda runtime</li>
+            <li>AWS Lambda (Python) &mdash; ingest and query compute</li>
+            <li>AWS Bedrock &mdash; Claude Haiku 4.5 for generation, Titan Embeddings v2 for vector embeddings</li>
+            <li>Amazon S3 &mdash; document storage, vector index, frontend hosting</li>
+            <li>API Gateway &mdash; public HTTPS endpoint</li>
+            <li>CloudFront &mdash; global CDN with HTTPS</li>
+            <li>CloudFormation &mdash; infrastructure as code</li>
+            <li>CloudWatch &mdash; dashboards, alarms, observability</li>
+            <li>SNS &mdash; alerting on threshold breaches</li>
+            <li>EventBridge &mdash; scheduled Lambda warmup</li>
+            <li>Plain HTML / CSS / Vanilla JS frontend (no framework, no build step)</li>
           </ul>
         </div>
       </div>
 
       <div class="modal-section">
         <div class="modal-label">Data Layer</div>
-        <div class="modal-body">
-          <ul>
-            <li>2,027-chunk combined vector index stored in S3 as JSON</li>
-            <li>Titan Embeddings v2 (1,536-dimensional vectors)</li>
-            <li>Cosine similarity search runs in-Lambda at query time</li>
-            <li>Two knowledge bases in a single index: Jimmy&rsquo;s background and AWS Well-Architected Framework</li>
-            <li>source_kb field on every chunk enables cross-KB search with visible source attribution</li>
-            <li>Module-level index caching: warm Lambda containers skip S3 reload on subsequent queries</li>
-          </ul>
-        </div>
+        <div class="modal-body">~2,027 chunks in a single S3-hosted JSON vector index, ~58MB total. Each chunk carries a source_kb tag for cross-KB filtering and UI badging. Documents chunked at 175 words with 20-word overlap, embedded via Titan Embeddings v2 (1,536-dim vectors). Cosine similarity runs in-Lambda &mdash; no Bedrock Knowledge Bases, no managed vector DB. Custom retrieval was a deliberate choice to demonstrate the layer rather than abstract it away.</div>
       </div>
 
       <div class="modal-section">
         <div class="modal-label">Key Decisions</div>
         <div class="modal-body">
           <ul>
-            <li>Custom retrieval over Bedrock Knowledge Bases &mdash; exposes the embedding, chunking, and search layers instead of abstracting them away</li>
-            <li>Single combined index with source_kb tagging &mdash; one cosine pass per query, merge logic is just sorting by score</li>
-            <li>Module-level index caching + 1024MB Lambda memory &mdash; cold worst-case dropped from 32s to 15s; EventBridge warmup primes the cache so first-touch is typically ~5s</li>
-            <li>EventBridge warm-up ping every 5 minutes &mdash; primes S3 index cache, keeps Lambda alive, synthetic SambaNova call at 3s timeout; ~$0.03/month</li>
-            <li>Bedrock as default provider, SambaNova via toggle &mdash; latency comparable (~2.5&ndash;5s), Bedrock produces deeper biographical answers</li>
-            <li>max_tokens=256 matched across both providers &mdash; consistent answer length regardless of model selection</li>
-            <li>CloudFormation for every AWS resource &mdash; no console clicks, reproducible deployments</li>
+            <li>Custom retrieval over Bedrock Knowledge Bases &mdash; full control of chunking, ranking, and KB tagging; demonstrates the underlying technique.</li>
+            <li>Cross-KB search with source tagging &mdash; single combined index, filter by tag at the UI rather than running per-KB queries.</li>
+            <li>EventBridge warmup ping every 5 minutes &mdash; eliminates cold-start latency for demo traffic at ~$0.01/month.</li>
+            <li>Module-level index caching in Lambda &mdash; warm containers skip the 58MB S3 load, dropping warm queries to 3&ndash;5s.</li>
           </ul>
         </div>
       </div>
 
       <div class="modal-section">
         <div class="modal-label">Structure</div>
-        <div class="modal-body">User flow on every query:
-          <ul style="margin-top:6px">
-            <li>Frontend sends query text and selected provider to API Gateway</li>
-            <li>Query Lambda embeds the query with Titan Embeddings v2</li>
-            <li>Cosine similarity search against the 2,027-chunk index returns top-K matches with source_kb tags</li>
-            <li>Provider router: Bedrock path uses Claude XML prompt template, SambaNova path uses Llama Markdown template</li>
-            <li>Response returned with generated answer plus retrieved source chunks, relevance scores, and KB badges</li>
-          </ul>
-        </div>
+        <div class="modal-body">Three-panel analyst console, not a chat box. Left: knowledge base navigator. Center: question + answer thread. Right: retrieved source chunks with relevance scores and KB badges. Top bar shows live status. Mobile (iPhone Safari) uses slide-over panels. Designed to look like a tool a real analyst would use, not a portfolio toy.</div>
       </div>
 
       <div class="modal-section">
         <div class="modal-label">What I Learned</div>
         <div class="modal-body">
-          <ul>
-            <li>Multi-cloud AI provider abstraction &mdash; isolating generation from retrieval makes swapping providers trivial</li>
-            <li>Serverless latency engineering &mdash; memory tuning, index caching, and EventBridge warm-up each moved the needle independently</li>
-            <li>RAG retrieval quality tuning &mdash; chunk size, overlap, and curated knowledge files all affect cosine scores</li>
-            <li>Cost discipline on AWS &mdash; under $5/month actual spend on a $20/month budget with observability, CloudFront, and dual AI providers</li>
+          <p>Originally architected with a secondary external LLM provider to demonstrate cross-cloud routing. The external provider&rsquo;s free-tier limits and billing system were unreliable enough that the demo would have intermittently failed for recruiters. Made the engineering call to cut the second provider and ship Bedrock-only. The graceful-error patterns built for the dual-provider version (rate-limit detection, fallback UI cards, structured logging of provider responses) transferred directly to single-provider error handling &mdash; none of that work was wasted.</p>
+          <p style="margin-top:10px">Other lessons:</p>
+          <ul style="margin-top:6px">
+            <li>Free-tier provider limits should be verified via actual API response headers before architectural decisions, not from marketing pages.</li>
+            <li>iOS Safari has subtle viewport bugs (input auto-zoom under 16px font, 100vh vs 100dvh viewport mismatch) that need handling for mobile-friendly demos.</li>
+            <li>CloudWatch alarm thresholds tuned by raising numbers are toothless; the right lever is evaluation periods (e.g., 3 of 5 datapoints breach) so alarms fire on sustained issues, not blips.</li>
           </ul>
         </div>
       </div>
@@ -832,12 +817,12 @@
         id: 'rag',
         name: 'RAG Knowledge Chatbot',
         status: 'live',
-        summary: 'Serverless RAG chatbot built on AWS for comparing AI responses, testing retrieval flows, and showing production-minded architecture around routing, latency, and scalability.',
-        tags: ['AWS Bedrock', 'SambaNova', 'Lambda', 'API Gateway', 'RAG'],
+        summary: 'Serverless RAG chatbot built on AWS that grounds answers in two knowledge bases — a personal/professional corpus and the AWS Well-Architected Framework — using custom retrieval, multi-KB search, and production-grade error handling.',
+        tags: ['AWS Bedrock', 'Lambda', 'API Gateway', 'Titan Embeddings', 'CloudFront', 'RAG'],
         keyPoints: [
-          'Dual-provider response comparison',
-          'Retrieval + prompt routing workflow',
-          'AWS-native serverless design'
+          'Multi-KB cross-source retrieval',
+          'Custom vector index in S3 (no managed vector DB)',
+          'Graceful error handling + CloudWatch observability'
         ],
         demoUrl: 'https://d1r1qv7io7k8vk.cloudfront.net',
         archModalId: 'rag-modal'
