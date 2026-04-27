@@ -602,10 +602,10 @@
         </div>
       </div>
 
-      <div class="node" id="node-linux" data-id="linux" data-status="inbuild" tabindex="0" role="button" aria-label="Linux Ops Command Copilot, In Build">
+      <div class="node" id="node-linux" data-id="linux" data-status="live" tabindex="0" role="button" aria-label="Linux Ops Command Copilot, Live">
         <div class="node-card">
           <div class="node-name">Linux Ops Command Copilot</div>
-          <div class="node-row"><div class="node-dot"></div><div class="node-badge">In Build</div></div>
+          <div class="node-row"><div class="node-dot"></div><div class="node-badge">Live</div></div>
         </div>
       </div>
 
@@ -640,10 +640,10 @@
         <div class="mobile-status">Live</div>
       </div>
 
-      <div class="mobile-item" data-id="linux" data-status="inbuild" tabindex="0" role="listitem">
+      <div class="mobile-item" data-id="linux" data-status="live" tabindex="0" role="listitem">
         <div class="mobile-dot"></div>
         <div class="mobile-name">Linux Ops Command Copilot</div>
-        <div class="mobile-status">In Build</div>
+        <div class="mobile-status">Live</div>
       </div>
 
       <div class="mobile-item" data-id="security" data-status="planned" tabindex="0" role="listitem">
@@ -811,6 +811,75 @@
     </div>
   </div>
 
+  <!-- Linux Ops Architecture Modal -->
+  <div id="linux-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="linux-modal-title">
+    <div class="modal-panel">
+      <button class="modal-close" onclick="closeModal('linux-modal')" aria-label="Close">&#x2715;</button>
+      <div class="modal-title" id="linux-modal-title">Linux Ops Command Copilot &mdash; Architecture</div>
+
+      <div class="modal-section">
+        <div class="modal-label">What It Is</div>
+        <div class="modal-body">A Linux-only command copilot for admin and ops workflows. Translates plain-English tasks into Bash, explains them, classifies operational risk, and suggests safer guidance when appropriate. The app never executes commands &mdash; it only generates and explains them. Built to demonstrate safety guardrails, structured AI output handling, and AWS serverless architecture as a focused product rather than a generic AI terminal.</div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-label">Tech Stack</div>
+        <div class="modal-body">
+          <ul>
+            <li>React 19 + TypeScript 6 + Vite 8 + Tailwind CSS v4 (CSS-first, `@tailwindcss/vite` plugin)</li>
+            <li>Python 3.12 AWS Lambda &mdash; 512 MB, 15 s timeout, Lambda SnapStart with `AutoPublishAlias: live`</li>
+            <li>AWS Bedrock &mdash; Claude Haiku 4.5 via `converse()` with native Structured Outputs (`outputConfig.textFormat`, `json_schema`, 14 fields all required)</li>
+            <li>API Gateway HTTP API &mdash; throttled at burst 20, rate 10 req/sec</li>
+            <li>AWS SAM + CloudFormation for both backend and frontend stacks</li>
+            <li>S3 + CloudFront frontend &mdash; private bucket, Origin Access Control (SigV4), BlockPublicAccess all-true, SPA fallback (403/404 &rarr; index.html)</li>
+            <li>CloudWatch logs (7-day retention), $15 billing alarm, SNS alerts, 5-minute EventBridge warmer</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-label">Safety Layer</div>
+        <div class="modal-body">
+          <p>Four-tier risk model &mdash; <strong>Safe</strong> (read-only), <strong>Caution</strong> (limited state change), <strong>Risky</strong> (destructive or broad), <strong>Refuse</strong> (malicious or sabotage intent). Every model response runs through a deterministic post-model safety pass (`backend/src/safety.py`) that ratchets risk classification up but never down.</p>
+          <p style="margin-top:10px">Six compiled regex families flag dangerous command syntax: destructive_delete, filesystem_disk, permission_ownership, remote_execution, resource_exhaustion, device_writes &mdash; with Tier-1/Tier-2 path detection (`/`, `/etc`, `/usr`, `/boot`) and quote stripping so `rm -rf "/"` and `chmod -R 777 '/etc'` still match.</p>
+          <p style="margin-top:10px">When the model refuses a dangerous-but-legitimate operation, the safety layer enriches the response with a concrete safer alternative, pre-check command, and technical explanation drawn from deterministic templates for 5 task-text families: device_writes, remote_execution, permission_ownership, filesystem_disk, destructive_delete. The pre-model gate (`check_refusal_intent`) and the enrichment gate (`_has_malicious_intent`) use intentionally different keyword lists &mdash; the pre-model gate is conservative on overloaded terms like "wipe" / "format" / "delete"; the enrichment gate is narrower (destroy, sabotage, bypass security, fork bomb) so legitimate admin tasks still receive a constructive reframe.</p>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-label">Key Decisions</div>
+        <div class="modal-body">
+          <ul>
+            <li>Haiku 4.5 over Sonnet 4.5 &mdash; swapped during latency optimization. Haiku is sufficient for the 14-field classification task at ~2x the throughput; Sonnet ARNs retained in IAM for a one-line rollback in `handler.py`.</li>
+            <li>Native Structured Outputs over forced Tool Use &mdash; migrated to Bedrock's `outputConfig.textFormat` (`json_schema`) once it went GA. Grammar-based constrained decoding eliminates the Tool Use conversion overhead; schema content byte-for-byte identical (verified via `json.dumps`). ~600 ms best-case improvement.</li>
+            <li>Lambda SnapStart for cold-start reduction &mdash; `ApplyOn: PublishedVersions` with `AutoPublishAlias: live`. Restore Duration ~609 ms (includes TLS re-establishment via `@register_after_restore`), Billed Restore Duration 70 ms. Cold start total dropped from ~6.94 s to ~4.3 s.</li>
+            <li>Refuse enrichment in `safety.py`, not in the prompt &mdash; the same model that refuses to generate the command would generate inconsistent reframes if asked to fill `safer_alternative` and `recommended_precheck` in the same response. Deterministic Python templates guarantee technically-correct reframes regardless of model behavior variance.</li>
+            <li>Terminal-aesthetic visual direction &mdash; the planning doc's "premium navy / ops glass" direction was rejected after Session 4 revealed that floating window chrome fights the terminal metaphor the product is built around. Adopted full-viewport terminal commitment (no chrome, no max-width container, no rounded corners on content).</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-label">Structure</div>
+        <div class="modal-body">
+          <p>Single-pane terminal-style scrollback. Each prompt + response pair persists as a history entry; the active textarea is pinned to the viewport bottom (`h-[100dvh]` to work around the iOS Safari `100vh` viewport bug), past entries scroll above it. Entries are modeled as a discriminated-union `HistoryEntry` (`kind: 'loading' | 'success' | 'error'`). Each entry header is a cyan prompt band (`ops@copilot:~$`) over the task text. The result panel renders all 14 schema fields as labeled `## SECTION` blocks with hyphen bullets, a copy-able command block, and a risk badge with destructive / sudo / read-only modifier dots.</p>
+          <p style="margin-top:10px">All four risk states render &mdash; including enriched Refuse with a populated `safer_alternative`. Mobile (iOS Safari real-device tested) uses `[overflow-wrap:anywhere]` on command blocks, 16 px textarea font (Safari's threshold for not auto-zooming on focus), 44 px tap targets per Apple HIG, and blur-on-submit to dismiss the keyboard once a result lands.</p>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-label">What I Learned</div>
+        <div class="modal-body">
+          <ul>
+            <li>Warm latency dropped from 4.5&ndash;6 s (Sonnet 4.5) to 2.4&ndash;3.6 s by combining three independent levers: a model swap to Haiku 4.5, Lambda SnapStart, and a migration from forced Tool Use to native Structured Outputs. Each lever was deployed and measured separately &mdash; none were retroactive guesses.</li>
+            <li>Haiku 4.5 has a model ceiling on safety classification. Three dangerous-but-legitimate sysadmin tasks (dd to /dev/sda, pipe-to-bash, recursive chmod on broad paths) classified as Refuse instead of Risky across two prompt-tuning iterations, including a diagnostic deploy with forced Tool Use that produced the same result &mdash; ruling out the API migration as the cause. Iteration was capped at 3 attempts; the deterministic enrichment templates in `safety.py` became the permanent workaround.</li>
+            <li>External code review (Codex) caught a subtle correctness bug in the response handling: an early `isCommandResponse` predicate validated only one field (`risk_level`) while asserting the full 14-field shape &mdash; structurally identical to the silent `as` cast it was meant to replace. Resolved by validating every required field, cast-free, via `'key' in obj` narrowing. Type predicates that don't actually predicate are landmines for future refactors.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     const projects = [
       {
@@ -844,7 +913,7 @@
       {
         id: 'linux',
         name: 'Linux Ops Command Copilot',
-        status: 'inbuild',
+        status: 'live',
         summary: 'Plain-English to Bash assistant for Linux admin workflows, combining command generation with safety-aware guidance, risk labels, and operational review.',
         tags: ['Linux', 'React', 'AWS Lambda', 'API Gateway', 'Safety-aware'],
         keyPoints: [
@@ -852,8 +921,8 @@
           'Structured risk classification',
           'Serverless backend architecture'
         ],
-        demoUrl: null,
-        archModalId: null
+        demoUrl: 'https://d1dqp0w50lre0j.cloudfront.net',
+        archModalId: 'linux-modal'
       },
       {
         id: 'security',
@@ -939,6 +1008,32 @@
         const nx = nr.left - mr.left + nr.width  / 2;
         const ny = nr.top  - mr.top  + nr.height / 2;
 
+        // Clip the line to terminate at the card's outer edge facing the hub,
+        // not at its geometric center. Parametrize p(t) = hub + t*(card - hub);
+        // smallest t in (0, 1] whose point lies on the card's bounding rect
+        // is the entry point. Falls back to card center (t = 1) on degeneracy.
+        const L = nr.left - mr.left;
+        const R = L + nr.width;
+        const T = nr.top  - mr.top;
+        const B = T + nr.height;
+        const dx = nx - hcx;
+        const dy = ny - hcy;
+        const candidates = [];
+        if (dx !== 0) candidates.push((L - hcx) / dx, (R - hcx) / dx);
+        if (dy !== 0) candidates.push((T - hcy) / dy, (B - hcy) / dy);
+        let bestT = 1;
+        const eps = 0.5;
+        for (const t of candidates) {
+          if (t <= 0 || t > 1) continue;
+          const px = hcx + t * dx;
+          const py = hcy + t * dy;
+          if (px >= L - eps && px <= R + eps && py >= T - eps && py <= B + eps && t < bestT) {
+            bestT = t;
+          }
+        }
+        const ex = hcx + bestT * dx;
+        const ey = hcy + bestT * dy;
+
         const isActive = p.id === activeId;
         const color = p.status === 'live'    ? '#22c55e'
                     : p.status === 'inbuild' ? '#f59e0b'
@@ -951,8 +1046,8 @@
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line.setAttribute('x1', hcx);
         line.setAttribute('y1', hcy);
-        line.setAttribute('x2', nx);
-        line.setAttribute('y2', ny);
+        line.setAttribute('x2', ex);
+        line.setAttribute('y2', ey);
         line.setAttribute('stroke', color);
         line.setAttribute('stroke-width', isActive ? '1.5' : '1');
         line.setAttribute('stroke-opacity', opacity);

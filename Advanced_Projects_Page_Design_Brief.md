@@ -289,7 +289,7 @@ Football analytics platform focused on performance breakdowns, trend analysis, a
 
 ## Linux Ops Command Copilot
 ### Status
-In Build
+Live
 
 ### Summary
 Plain-English to Bash assistant for Linux admin workflows, combining command generation with safety-aware guidance, risk labels, and operational review.
@@ -302,7 +302,8 @@ Plain-English to Bash assistant for Linux admin workflows, combining command gen
 - Safety-aware
 
 ### Buttons
-- none (In Build — V1)
+- Live Demo
+- Architecture
 
 ### Key points
 - Safety-aware command review

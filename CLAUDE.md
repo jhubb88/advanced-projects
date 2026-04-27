@@ -1,5 +1,5 @@
 # CLAUDE.md — advanced-projects Operating Rules
-Last updated: 2026-04-20
+Last updated: 2026-04-27
 
 These rules apply to every Claude Code session in this repo without exception.
 
@@ -40,13 +40,13 @@ These rules apply to every Claude Code session in this repo without exception.
 - Deployed via: `aws s3 cp index.html s3://jimmy-advanced-projects/index.html --profile portfolio-user`
 - GitHub repo: `git@github.com:jhubb88/advanced-projects.git`
 
-## Page Architecture (as of 2026-04-20)
+## Page Architecture (as of 2026-04-27)
 The page is an **AWS node-web** design — not a card grid. Key implementation details:
 
 **Layout**
 - Desktop: two-column flex — left 56% is the radial node map, right 44% is a persistent detail pane
 - Node map uses `position: relative` container with absolutely-positioned `.node` divs for each project
-- SVG overlay (`#lines-svg`, `position: absolute; inset: 0`) draws connection lines from hub center to each node center via JS `getBoundingClientRect()` — lines are redrawn on click and window resize
+- SVG overlay (`#lines-svg`, `position: absolute; inset: 0`) draws connection lines from hub center to each node card's outer edge via JS `getBoundingClientRect()` — lines are redrawn on click and window resize. As of 2026-04-27, `drawLines()` clips each line at the smallest `t ∈ (0, 1]` where the parametric line from hub center to card center crosses the card's bounding rectangle (line/AABB intersection). This terminates lines uniformly at the visible card edge regardless of card height (multi-line labels), instead of plowing through tall cards on the way to their geometric center. Falls back to card center on math degeneracy
 - AWS hub is centered in the map area via `transform: translate(-50%, -50%)`
 - Mobile breakpoint at 768px: radial map hidden, stacked `#mobile-list` shown instead (tap to select, detail pane renders below)
 
@@ -65,7 +65,7 @@ The page is an **AWS node-web** design — not a card grid. Key implementation d
 - Button logic: Live → Live Demo + Architecture; In Build → no buttons; Planned → no CTA row
 - Case Study button was dropped for V1 — no fake CTAs for content that doesn't exist
 
-**Architecture modals (RAG + FieldIQ)**
+**Architecture modals (RAG + FieldIQ + Linux Ops)**
 - Modal section labels: `color: var(--dim)` (`#64748b`) — same style as STACK / KEY POINTS in detail pane
 - Bullet dashes `—`: `color: var(--dim)`
 - Modal panel border: `1px solid var(--border)` (`#30363d`)
