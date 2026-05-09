@@ -2,7 +2,7 @@
 
 A single-page catalog of advanced AWS + AI portfolio projects, rendered as an interactive node graph with status badges and per-project architecture modals.
 
-**Live demo:** https://d2uisqfxjzeo6a.cloudfront.net
+**Live demo:** https://projects.jimmyhubbard2.cc
 
 ## Overview
 
